@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Grover Algorithm Simulation</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="page-shell">
+    <header class="hero">
+      <a href="index.html" class="back-link">← Back</a>
+      <h1>Grover's Algorithm Simulation</h1>
+      <p>Explore a simplified Grover search simulation, including interactive iteration animation.</p>
+      <nav class="top-nav">
+        <a href="index.html" class="nav-link">Home</a>
+        <a href="grover.html" class="nav-link active">Grover</a>
+        <a href="shor.html" class="nav-link">Shor</a>
+      </nav>
+    </header>
+
+    <section class="content">
+      <article class="card">
+        <details open class="section-dropdown">
+          <summary><h2>Simulation Overview</h2></summary>
+          <div>
+            <p>This implementation follows the structure of a classical Grover search simulation in Java.</p>
+            <ul>
+              <li><strong>Search space:</strong> 16 candidate keys (4-bit key space)</li>
+              <li><strong>Secret key:</strong> 9</li>
+              <li><strong>Initialization:</strong> equal superposition of all keys</li>
+              <li><strong>Iterations:</strong> floor(π/4 * √N)</li>
+            </ul>
+          </div>
+        </details>
+      </article>
+
+      <article class="card highlight">
+        <details open class="section-dropdown">
+          <summary><h2>Key Algorithm Steps</h2></summary>
+          <div class="dropdown-list">
+            <details open>
+              <summary>1. Initialize State</summary>
+              <p>Each candidate key starts with equal amplitude 1/√N, representing an equal superposition of all possibilities.</p>
+            </details>
+            <details>
+              <summary>2. Oracle</summary>
+              <p>The oracle flips the phase of the secret key's amplitude, marking it for amplification without changing the others.</p>
+            </details>
+            <details>
+              <summary>3. Diffusion</summary>
+              <p>The diffusion operator reflects all amplitudes around their mean to amplify the marked state.</p>
+            </details>
+            <details>
+              <summary>4. Repeat</summary>
+              <p>Repeat oracle and diffusion for floor(π/4 * √N) iterations to maximize the probability of the secret key.</p>
+            </details>
+          </div>
+        </details>
+      </article>
+
+      <article class="card">
+        <details open class="section-dropdown">
+          <summary><h2>Sample Output</h2></summary>
+          <div>
+            <p>After the Grover iterations, the simulation reports probabilities for each key. The highest probability is the discovered key.</p>
+            <div class="output-grid">
+              <div class="output-label">Key</div>
+              <div class="output-label">Probability</div>
+              <div class="output-value">9</div>
+              <div class="output-value">0.81</div>
+            </div>
+            <p class="note">The Java-style simulation computes probabilities for all candidate keys and selects the most likely one.</p>
+          </div>
+        </details>
+      </article>
+
+      <article class="card code-card">
+        <details open class="section-dropdown">
+          <summary><h2>Pseudo Implementation</h2></summary>
+          <div>
+            <pre><code>initialize state[N] = 1 / sqrt(N)
+for i in 0 .. iterations:
+  oracle(state)
+  diffusion(state)
+print probabilities for each key
+find key with maximum probability</code></pre>
+          </div>
+        </details>
+      </article>
+
+      <article class="card interactive-card">
+        <h2>Interactive Simulation</h2>
+        <p>Enter a power-of-two search space size and the secret key to animate Grover iterations.</p>
+        <div class="form-grid">
+          <label class="control-group">
+            <span>Search space size (power of 2)</span>
+            <input id="inputN" type="number" min="2" step="1" value="16" />
+          </label>
+          <label class="control-group">
+            <span>Secret key index</span>
+            <input id="inputTarget" type="number" min="0" value="9" />
+          </label>
+        </div>
+        <button id="runButton" class="primary-button">Run Simulation</button>
+        <div id="simulationStatus" class="note">Press "Run Simulation" to compute amplitudes and probabilities.</div>
+        <div id="simulationResult" class="simulation-result"></div>
+      </article>
+    </section>
+  </div>
+  <script>
+    function applyOracle(state, target) {
+      state[target] *= -1;
+    }
+    function applyDiffusion(state) {
+      const mean = state.reduce((sum, value) => sum + value, 0) / state.length;
+      for (let i = 0; i < state.length; i++) {
+        state[i] = 2 * mean - state[i];
+      }
+    }
+    function buildStepStates(N, target) {
+      const state = new Array(N).fill(1 / Math.sqrt(N));
+      const states = [state.slice()];
+      const iterations = Math.floor(Math.PI / 4 * Math.sqrt(N));
+      for (let i = 0; i < iterations; i++) {
+        applyOracle(state, target);
+        applyDiffusion(state);
+        states.push(state.slice());
+      }
+      return { states, iterations };
+    }
+    const groverStepDescriptions = [
+      'Initialize equal amplitudes for each candidate state.',
+      'Apply the oracle to flip the phase of the secret key.',
+      'Apply diffusion to amplify the marked state amplitude.',
+      'Repeat the process until the marked state probability peaks.'
+    ];
+    function renderStepResults(state, target, step, iterations) {
+      const phaseStep = step === 0 ? 0 : ((step - 1) % 2) + 1;
+      const phaseName = step === 0 ? 'Initial state' : phaseStep === 1 ? 'Oracle applied' : 'Diffusion applied';
+      const currentDescription = groverStepDescriptions[Math.min(step, groverStepDescriptions.length - 1)];
+      const rows = state
+        .map((amplitude, index) => {
+          const probability = amplitude * amplitude;
+          const width = Math.max(2, Math.min(100, probability * 100));
+          return `
+          <tr${index === target ? ' class="highlight-row"' : ''}>
+            <td>${index}</td>
+            <td>${probability.toFixed(4)}</td>
+            <td>
+              <div class="bar"><div class="bar-fill" style="width: ${width}%"></div></div>
+            </td>
+          </tr>`;
+        })
+        .join("");
+      const best = state
+        .map((amplitude, index) => ({ index, probability: amplitude * amplitude }))
+        .reduce((winner, item) => (item.probability > winner.probability ? item : winner), { index: 0, probability: 0 });
+      const circuit = state
+        .map((amplitude, index) => {
+          const probability = amplitude * amplitude;
+          const width = Math.max(4, Math.min(100, probability * 90));
+          return `<div class="circuit-bar${index === target ? ' target' : ''}" style="flex: ${width};"><span>${index}</span></div>`;
+        })
+        .join("");
+      return `
+        <div class="result-summary">
+          <p><strong>Iteration:</strong> ${step}/${iterations}</p>
+          <p><strong>Phase:</strong> ${phaseName}</p>
+          <p><strong>Most likely key now:</strong> ${best.index} (${best.probability.toFixed(4)})</p>
+          <p class="note">${currentDescription}</p>
+        </div>
+        <div class="circuit-animation">
+          ${circuit}
+        </div>
+        <div class="result-table-wrap">
+          <table class="result-table">
+            <thead><tr><th>Key</th><th>Probability</th><th>Amplitude</th></tr></thead>
+            <tbody>${rows}</tbody>
+          </table>
+        </div>`;
+    }
+    function animateSteps(states, target, iterations, resultArea) {
+      let step = 0;
+      resultArea.innerHTML = renderStepResults(states[step], target, step, iterations);
+      const intervalId = setInterval(() => {
+        step += 1;
+        if (step >= states.length) {
+          clearInterval(intervalId);
+          return;
+        }
+        resultArea.innerHTML = renderStepResults(states[step], target, step, iterations);
+      }, 500);
+    }
+    document.getElementById("runButton").addEventListener("click", () => {
+      const nInput = Number(document.getElementById("inputN").value);
+      const targetInput = Number(document.getElementById("inputTarget").value);
+      const resultArea = document.getElementById("simulationResult");
+      if (!Number.isInteger(nInput) || nInput < 2 || (nInput & (nInput - 1)) !== 0) {
+        resultArea.innerHTML = '<p class="note">Enter a valid power-of-two search space size like 4, 8, 16, or 32.</p>';
+        return;
+      }
+      if (nInput > 32) {
+        resultArea.innerHTML = '<p class="note">Use a smaller search space (max 32) for smooth animation.</p>';
+        return;
+      }
+      if (!Number.isInteger(targetInput) || targetInput < 0 || targetInput >= nInput) {
+        resultArea.innerHTML = '<p class="note">The secret key must be an integer between 0 and N - 1.</p>';
+        return;
+      }
+      const { states, iterations } = buildStepStates(nInput, targetInput);
+      resultArea.innerHTML = '<p class="note">Animating Grover iterations…</p>';
+      animateSteps(states, targetInput, iterations, resultArea);
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Shor Algorithm Simulation</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="page-shell">
+    <header class="hero">
+      <a href="index.html" class="back-link">← Back</a>
+      <h1>Shor's Algorithm Simulation</h1>
+      <p>Explore a classical-style Shor simulation for small composite numbers and order finding.</p>
+      <nav class="top-nav">
+        <a href="index.html" class="nav-link">Home</a>
+        <a href="grover.html" class="nav-link">Grover</a>
+        <a href="shor.html" class="nav-link active">Shor</a>
+      </nav>
+    </header>
+
+    <section class="content">
+      <article class="card">
+        <details open class="section-dropdown">
+          <summary><h2>Shor's Algorithm Overview</h2></summary>
+          <div>
+            <p>Shor's algorithm factors a composite number using order finding. This simulation shows the classical modular arithmetic step.</p>
+            <ul>
+              <li><strong>Goal:</strong> factor a composite number N</li>
+              <li><strong>Choose base:</strong> a where 1 < a < N</li>
+              <li><strong>Order finding:</strong> smallest r such that a^r ≡ 1 (mod N)</li>
+              <li><strong>Factor extraction:</strong> compute gcd(a^(r/2) ± 1, N)</li>
+            </ul>
+          </div>
+        </details>
+      </article>
+
+      <article class="card highlight">
+        <details open class="section-dropdown">
+          <summary><h2>Shor Algorithm Steps</h2></summary>
+          <div class="dropdown-list">
+            <details open>
+              <summary>1. Pick N and a</summary>
+              <p>Choose a composite number N and a base a with 1 < a < N.</p>
+            </details>
+            <details>
+              <summary>2. Compute gcd(a, N)</summary>
+              <p>If gcd(a, N) > 1, then a non-trivial factor has already been found.</p>
+            </details>
+            <details>
+              <summary>3. Find order r</summary>
+              <p>Find the smallest r such that a^r % N == 1.</p>
+            </details>
+            <details>
+              <summary>4. Extract factors</summary>
+              <p>If r is even and a^(r/2) ≠ -1 mod N, compute gcd(a^(r/2) ± 1, N) for non-trivial factors.</p>
+            </details>
+          </div>
+        </details>
+      </article>
+
+      <article class="card">
+        <details open class="section-dropdown">
+          <summary><h2>Sample Output</h2></summary>
+          <div>
+            <p>Example: N = 15 and a = 2 gives order r = 4, then factors 3 and 5.</p>
+            <div class="output-grid">
+              <div class="output-label">N</div>
+              <div class="output-label">a</div>
+              <div class="output-value">15</div>
+              <div class="output-value">2</div>
+            </div>
+            <p class="note">This simulation uses classical arithmetic to illustrate the Shor workflow.</p>
+          </div>
+        </details>
+      </article>
+
+      <article class="card code-card">
+        <details open class="section-dropdown">
+          <summary><h2>Pseudo Implementation</h2></summary>
+          <div>
+            <pre><code>choose composite N and base a
+if gcd(a, N) > 1:
+  return gcd(a, N)
+find smallest r where a^r % N == 1
+if r % 2 == 0 and a^(r/2) % N != N-1:
+  return gcd(a^(r/2)-1, N), gcd(a^(r/2)+1, N)
+else retry with another base</code></pre>
+          </div>
+        </details>
+      </article>
+
+      <article class="card interactive-card">
+        <h2>Shor Simulation</h2>
+        <p>Enter a small composite number and a base to compute order and potential factors.</p>
+        <div class="form-grid">
+          <label class="control-group">
+            <span>Composite number N</span>
+            <input id="shorN" type="number" min="4" step="1" value="15" />
+          </label>
+          <label class="control-group">
+            <span>Base a</span>
+            <input id="shorA" type="number" min="2" step="1" value="2" />
+          </label>
+        </div>
+        <button id="runShorButton" class="primary-button">Run Shor Simulation</button>
+        <div id="shorResult" class="simulation-result">
+          <p class="note">Press "Run Shor Simulation" to compute factors and order.</p>
+        </div>
+      </article>
+    </section>
+  </div>
+  <script>
+    function gcd(a, b) {
+      while (b !== 0) {
+        const temp = b;
+        b = a % b;
+        a = temp;
+      }
+      return Math.abs(a);
+    }
+    function modPow(base, exponent, modulus) {
+      let result = 1;
+      let value = base % modulus;
+      let exp = exponent;
+      while (exp > 0) {
+        if (exp % 2 === 1) {
+          result = (result * value) % modulus;
+        }
+        value = (value * value) % modulus;
+        exp = Math.floor(exp / 2);
+      }
+      return result;
+    }
+    function findOrder(a, N) {
+      let r = 1;
+      let current = a % N;
+      while (current !== 1 && r < N) {
+        current = (current * a) % N;
+        r += 1;
+      }
+      return current === 1 ? r : null;
+    }
+    function runShorSimulation(N, a) {
+      if (N < 4 || !Number.isInteger(N)) {
+        return { error: 'N must be a composite integer greater than 3.' };
+      }
+      if (a <= 1 || a >= N || !Number.isInteger(a)) {
+        return { error: 'Base a must be an integer between 2 and N - 1.' };
+      }
+      const g = gcd(a, N);
+      if (g > 1 && g < N) {
+        return { N, a, gcd: g, order: null, factors: [g, N / g], message: 'Non-trivial factor found immediately from gcd.' };
+      }
+      const r = findOrder(a, N);
+      if (!r || r % 2 !== 0) {
+        return { N, a, gcd: g, order: r, factors: null, message: 'Order not found or not even; try a different base.' };
+      }
+      const x = modPow(a, r / 2, N);
+      if (x === N - 1) {
+        return { N, a, gcd: g, order: r, factors: null, message: 'a^(r/2) ≡ -1 mod N, choose a different base.' };
+      }
+      const factor1 = gcd(x - 1, N);
+      const factor2 = gcd(x + 1, N);
+      const factors = [factor1, factor2].filter((f) => f > 1 && f < N);
+      return {
+        N,
+        a,
+        gcd: g,
+        order: r,
+        factors: factors.length ? factors : null,
+        message: factors.length ? 'Factors found using order-finding step.' : 'No non-trivial factors found for this base.',
+      };
+    }
+    function renderShorResult(result) {
+      if (result.error) {
+        return `<p class="note">${result.error}</p>`;
+      }
+      const factorText = result.factors ? result.factors.join(' and ') : 'None';
+      const stepList = [];
+      if (result.gcd > 1 && result.gcd < result.N) {
+        stepList.push(`Checked gcd(a, N) = ${result.gcd}; non-trivial factor found immediately.`);
+      } else {
+        stepList.push(`Checked gcd(a, N) = ${result.gcd}; proceed to order finding.`);
+        stepList.push(`Computed order r = ${result.order ?? 'not found'} for a mod N.`);
+        if (result.order && result.order % 2 === 0) {
+          stepList.push(`Computed x = a^(r/2) mod N and evaluated gcd(x ± 1, N).`);
+        } else {
+          stepList.push('Order is not even or not found; choose a different base to retry.');
+        }
+      }
+      return `
+        <div class="result-summary">
+          <p><strong>N:</strong> ${result.N}</p>
+          <p><strong>a:</strong> ${result.a}</p>
+          <p><strong>Order r:</strong> ${result.order ?? 'not found'}</p>
+          <p><strong>Factors:</strong> ${factorText}</p>
+        </div>
+        <div class="step-list">
+          ${stepList.map((item) => `<li>${item}</li>`).join('')}
+        </div>
+        <p class="note">${result.message}</p>`;
+    }
+    document.getElementById("runShorButton").addEventListener("click", () => {
+      const N = Number(document.getElementById("shorN").value);
+      const a = Number(document.getElementById("shorA").value);
+      const resultArea = document.getElementById("shorResult");
+      resultArea.innerHTML = '<p class="note">Running Shor simulation...</p>';
+      setTimeout(() => {
+        resultArea.innerHTML = renderShorResult(runShorSimulation(N, a));
+      }, 150);
+    });
+  </script>
+</body>
+</html>
