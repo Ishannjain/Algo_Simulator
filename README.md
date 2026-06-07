@@ -45,12 +45,4 @@ The project is built using plain HTML and CSS, designed to run locally without a
 - If you update CSS or HTML, refresh the browser to see changes.
 - Keep relative paths intact if you move files between folders.
 
-## Possible Improvements
 
-- Add JavaScript-based quantum circuit animations.
-- Improve explanations with step-by-step algorithm breakdowns.
-- Add a dedicated navigation menu and mobile-friendly layout.
-
-## Contact
-
-If you are using this for an academic project, include your name, college, and semester details here.
